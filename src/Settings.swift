@@ -40,10 +40,10 @@ struct Settings: Codable {
     }
 
     var useHeader: Bool = false
-    var trackpadRange: Range? = Range(from: "0.05,0.1,0.95,0.9")
+    var trackpadRange: Range? = Range(from: "0.275,0.3,0.725,0.7")
     var screenRange: Range? = nil
-    var emitMouseEvent: Bool = false
-    var requireCommandKey: Bool = true
+    var emitMouseEvent: Bool = true
+    var requireCommandKey: Bool = false
 
     init(trackpad: Range? = nil, screen: Range? = nil) {
         trackpadRange = trackpad
