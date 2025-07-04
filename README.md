@@ -1,132 +1,74 @@
-# Trackpad mapper for Mac
+# Mac Trackpad Mapper
 
-This utility maps finger position on trackpad to curosr coordinate on screen.
+Maps a region of the trackpad to a region of the screen.
 
-- [x] Lightweight
-- [x] Does not create window
-- [x] Highly configurable
-- [x] Status bar app for easy toggling absolute tracking
+## How to Use (for Non-Developers)
 
-I personally use this to play Osu! (& Osu!lazer) on Mac with trackpad.
+Follow these steps to get the app running.
 
-## Usage
+### 1. Download the App Files
 
-Open the app, there is a trackpad icon shown on the status bar. By default,
-mapping was disabled. To toggle mapping, click the icon and choose 'Start
-absolute tracking' or 'Stop absolute tracking'
+You have two options. Pick one that's easiest for you.
 
-## Settings
+**Option A: Download as a ZIP file**
 
-In the preference window, there are three items:
+1.  Go to the GitHub repository page for this project.
+2.  Click the green `<> Code` button.
+3.  Select `Download ZIP`.
+4.  Unzip the downloaded file.
 
-1. - [ ] Use settings in header file (settings.h)
-2. Trackpad region: [Region]
-3. Screen region: [Region]
+**Option B: Use Git (if you have it)**
 
-If you want to use your custom code to map coordinates, enable the first item.
-(See Modifying rule in header file)
+Open your Terminal and run this command:
 
-The syntax of [Region] is `lowx,lowy,upx,upy`, where all numbers are floats in
-range 0 to 1 inclusively. These numbers are passed as command line arguments to
-`trackpad_mapper_util`. Click `Apply` to update the settings and remember to
-restart absolute tracking.
-
-## Modifying rule in header file
-
-The default settings are stored in `settings.def.h`. You may want to make a
-copy of it and rename it to `settings.h`. This is where all local settings are
-stored.
-
-### Mapping
-
-There is a function `map` in `settings.h` that converts normalized finger
-position on trackpad to absolute coordinate of cursor on Screen.
-`MTPoint map(double, double)` must be provided in `settings.h` as it will be
-called in `trackpad_mapper_util.c`.
-
-```C
-MTPoint map(double normx, double normy) {
-    // whole trackpad to whole screen
-    MTPoint point = {
-        normx * screenSize.width, normy * screenSize.height
-    };
-    return point;
-}
+```bash
+git clone https://github.com/jason-lewis/mac-trackpad-mapper.git
 ```
 
-Use the function `rangeRatio()` to map custom arrangments.
+### 2. Install Developer Tools
 
-```C
-.x = rangeRatio(normx, lowx, highx),
-.y = rangeRatio(normy, lowy, highy),
-```
+The app needs Apple's Command Line Tools to be built. It's a one-time setup.
 
-Set the `lowx` & `highx` to a number between 0 & 1, much like a percentage. To map the middle of the trackpad to the whole screen (for x dimension), set `lowx` to `.25` & `highx` to `.75`.  
+1.  Open the **Terminal** app (you can find it in `/Applications/Utilities`).
+2.  Copy and paste this command into the Terminal and press Enter:
 
-Example code to map to top right quarter of trackpad to whole screen
+    ```bash
+    xcode-select --install
+    ```
+3.  A window will pop up. Follow the instructions to install the tools. If it says the tools are already installed, you're all set.
 
-```C
-MTPoint map(double normx, double normy) {
-    // top right quarter of the area of trackpad to whole screen
-    MTPoint point = {
-            //the right half (.5 to 1) of the trackpad
-            .x = rangeRatio(normx, .5, 1),
-            //the top half (0 to 0.5) of the trackpad
-            .y = rangeRatio(normy, 0, .5),
-        };
-    point.x *= screenSize.width;
-    point.y *= screenSize.height;
-    return point;
-}
-```
+### 3. Build the Application
 
-Remember to rebuild the util everytime you changed `map`.
+Now, you'll compile the source code into a runnable app.
 
-### Screen Size
+1.  Open the **Terminal** app.
+2.  Navigate to the folder you downloaded and unzipped. For example, if it's in your Downloads folder, you would type:
 
-`extern CGSize screenSize` declared in `settings.def.h` will be initialized in
-the main program. Do not remove the declaration.
+    ```bash
+    cd ~/Downloads/mac-trackpad-mapper-main
+    ```
+3.  Once you are in the correct directory, run this command:
 
-The main program makes sure the mapped cursor coordinate is within `screenSize`
-to make the dock appear.
+    ```bash
+    make release
+    ```
 
-### Emitting mouse events
+### 4. Run the App
 
-It is possible choose between emitting mouse event or wrapping cursor coordinate
-(without mouse event). Some programs requires emitting mouse events but enabling
-it will cause the cursor not to magnify. Set `bool emitMouseEvent = true` to
-emit mouse event. The default value is `false`.
+1.  After the `make release` command finishes, a new `build` folder will appear. Inside it, you will find **Trackpad Mapper.app**.
+2.  You can double-click **Trackpad Mapper.app** to run it immediately.
+3.  Alternatively, you can install it to your main Applications folder by running this command in the Terminal:
+    ```bash
+    make install
+    ```
+    After that, you can find and run "Trackpad Mapper" from your Applications folder like any other app.
 
-## Building
+### 5. Grant Permissions
 
-Building the app requires Xcode version >= 11.
+The first time you run the app, your Mac will ask you to grant **Accessibility** permissions. You must do this for the app to work.
 
-To compile, run
-```sh
-make release
-```
+1.  Open **System Settings**.
+2.  Go to **Privacy & Security** > **Accessibility**.
+3.  Find **Trackpad Mapper** in the list and turn the switch on.
 
-The app is located in `build/`.
-
-You may want to copy the app to the `/Applications/` folder or run
-```sh
-make install
-```
-to do it for you.
-
-## Rebuilding Util
-
-After you modified `map`, run
-```sh
-make util_release install_util_update
-```
-This will compile and update the util binary in the app bundle inside `/Applications/`
-
-## TODO List
-
-- [x] Create an app that can toggle absolute tracking
-- [ ] Better way to change mapping rule
-
-## Reference
-Where I got the MultitouchSupport.h header
-https://gist.github.com/rmhsilva/61cc45587ed34707da34818a76476e11
+That's it! The app will now be running in your menu bar.
