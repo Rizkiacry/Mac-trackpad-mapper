@@ -2,10 +2,10 @@ import Cocoa
 import SwiftUI
 
 struct PreferenceUIView: View {
-    @State private var trackpadRange: String = "0.05,0.1,0.95,0.9"
+    @State private var trackpadRange: String = "0.275,0.3,0.725,0.7"
     @State private var screenRange: String = "0,0,1,1"
-    @State private var emitMouseEvent: Bool = false
-    @State private var requireCommandKey: Bool = true
+    @State private var emitMouseEvent: Bool = true
+    @State private var requireCommandKey: Bool = false
 
     var mainMenu: MainMenu
     @State private var localSettings = settings
