@@ -22,7 +22,7 @@ struct Settings: Codable {
         }
 
         func toString() -> String {
-            return "\(low.x),\(low.y),\(up.x),\(up.y)"
+            return String(format: "%.3f,%.3f,%.3f,%.3f", low.x, low.y, up.x, up.y)
         }
 
         static func stringIsValid(string: String, name: String = "") -> Bool {
@@ -44,11 +44,6 @@ struct Settings: Codable {
     var screenRange: Range? = nil
     var emitMouseEvent: Bool = true
     var requireCommandKey: Bool = false
-
-    init(trackpad: Range? = nil, screen: Range? = nil) {
-        trackpadRange = trackpad
-        screenRange = screen
-    }
 
     func toArgs() -> [String] {
         var args: [String] = []

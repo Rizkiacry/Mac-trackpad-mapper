@@ -69,6 +69,8 @@ class MainMenu: NSMenu {
             contentViewController: PreferenceViewController(mainMenu: self))
         preferenceWindow?.styleMask = [.titled, .closable, .miniaturizable]
         preferenceWindow?.title = "Preferences"
+
+        startProcess(nil)
     }
 
     @objc

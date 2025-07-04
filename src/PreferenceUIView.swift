@@ -39,6 +39,12 @@ struct PreferenceUIView: View {
                 .toggleStyle(.checkbox)
         }
         .padding()
+        .onAppear {
+            trackpadRange = settings.trackpadRange?.toString() ?? "0.275,0.3,0.725,0.7"
+            screenRange = settings.screenRange?.toString() ?? "0,0,1,1"
+            emitMouseEvent = settings.emitMouseEvent
+            requireCommandKey = settings.requireCommandKey
+        }
         Button(action: {
             if isValid {
                 localSettings.trackpadRange = Settings.Range(from: trackpadRange)
