@@ -35,6 +35,7 @@ class MainMenu: NSMenu {
             title: "Start absolute tracking",
             action: #selector(MainMenu.startProcess(_:)),
             keyEquivalent: "s")
+        startItem!.keyEquivalentModifierMask = .command
         startItem!.target = self
 
         // Stop process
@@ -42,6 +43,7 @@ class MainMenu: NSMenu {
             title: "Stop absolute tracking",
             action: #selector(MainMenu.stopProcess(_:)),
             keyEquivalent: "s")
+        stopItem!.keyEquivalentModifierMask = .command
         stopItem!.target = self
 
         // Preference
@@ -49,6 +51,7 @@ class MainMenu: NSMenu {
             title: "Preference",
             action: #selector(MainMenu.openPreference(_:)),
             keyEquivalent: ",")
+        preferenceItem!.keyEquivalentModifierMask = .command
         preferenceItem!.target = self
 
         // Quit app
@@ -56,6 +59,7 @@ class MainMenu: NSMenu {
             title: "Quit trackpad mapper",
             action: #selector(MainMenu.terminate(_:)),
             keyEquivalent: "q")
+        quitItem!.keyEquivalentModifierMask = .command
         quitItem!.target = self
 
         addItem(versionItem!)
