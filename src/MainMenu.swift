@@ -24,6 +24,8 @@ class MainMenu: NSMenu {
     public init() {
         super.init(title: "")
 
+        delegate = self
+
         // Version
         versionItem = NSMenuItem(
             title: "Version 0.0.1",
@@ -121,5 +123,16 @@ class MainMenu: NSMenu {
             window.makeKeyAndOrderFront(nil)
             window.level = .floating
         }
+    }
+}
+
+extension MainMenu: NSMenuDelegate {
+    func menuWillOpen(_ menu: NSMenu) {
+        let source = CGEventSource(stateID: .hidSystemState)
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 125, keyDown: true)
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 125, keyDown: false)
+
+        keyDown?.post(tap: .cghidEventTap)
+        keyUp?.post(tap: .cghidEventTap)
     }
 }
