@@ -19,24 +19,72 @@ struct PreferenceUIView: View {
                 name: "Screen region")
     }
 
+    private enum Field: Int, CaseIterable {
+        case trackpadRange, screenRange, emitMouseEvent, requireCommandKey, apply
+    }
+
+    @FocusState private var focusedField: Field?
+
     var body: some View {
         VStack(alignment: .leading) {
-            Form {
-                HStack {
-                    Text("Trackpad region:")
-                    TextField("", text: $trackpadRange)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+            VStack(alignment: .leading) {
+                Form {
+                    HStack {
+                        Text("Trackpad region:")
+                        TextField("", text: $trackpadRange)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .focused($focusedField, equals: .trackpadRange)
+                    }
+                    HStack {
+                        Text("Screen region:")
+                        TextField("", text: $screenRange)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .focused($focusedField, equals: .screenRange)
+                    }
                 }
-                HStack {
-                    Text("Screen region:")
-                    TextField("", text: $screenRange)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                }
+                Toggle("Emit mouse events", isOn: $emitMouseEvent)
+                    .toggleStyle(.checkbox)
+                    .focusable()
+                    .focused($focusedField, equals: .emitMouseEvent)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(focusedField == .emitMouseEvent ? Color.accentColor : Color.clear, lineWidth: 2)
+                    )
+                Toggle("Activate only while ⌘ pressed", isOn: $requireCommandKey)
+                    .toggleStyle(.checkbox)
+                    .focusable()
+                    .focused($focusedField, equals: .requireCommandKey)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(focusedField == .requireCommandKey ? Color.accentColor : Color.clear, lineWidth: 2)
+                    )
             }
-            Toggle("Emit mouse events", isOn: $emitMouseEvent)
-                .toggleStyle(.checkbox)
-            Toggle("Activate only while ⌘ pressed", isOn: $requireCommandKey)
-                .toggleStyle(.checkbox)
+            .focusSection()
+
+            HStack {
+                Spacer()
+                Button(action: {
+                    if isValid {
+                        localSettings.trackpadRange = Settings.Range(from: trackpadRange)
+                        localSettings.screenRange = Settings.Range(from: screenRange)
+                    }
+                    localSettings.emitMouseEvent = emitMouseEvent
+                    localSettings.requireCommandKey = requireCommandKey
+
+                    settings = localSettings
+
+                    if mainMenu.process != nil {
+                        mainMenu.stopProcess(nil)
+                        mainMenu.startProcess(nil)
+                    }
+                }) {
+                    Text("Apply").padding()
+                }
+                .buttonStyle(.borderedProminent)
+                .focusable()
+                .focused($focusedField, equals: .apply)
+                Spacer()
+            }
         }
         .padding()
         .onAppear {
@@ -44,23 +92,65 @@ struct PreferenceUIView: View {
             screenRange = settings.screenRange?.toString() ?? "0,0,1,1"
             emitMouseEvent = settings.emitMouseEvent
             requireCommandKey = settings.requireCommandKey
+            focusedField = .trackpadRange
         }
-        Button(action: {
-            if isValid {
-                localSettings.trackpadRange = Settings.Range(from: trackpadRange)
-                localSettings.screenRange = Settings.Range(from: screenRange)
+        .onKeyPress { press in
+            if press.characters == "\u{0009}" {
+                if press.modifiers.contains(.shift) {
+                    focusedField = focusedField.map {
+                        Field(rawValue: ($0.rawValue - 1 + Field.allCases.count) % Field.allCases.count) ?? .trackpadRange
+                    }
+                } else {
+                    focusedField = focusedField.map {
+                        Field(rawValue: ($0.rawValue + 1) % Field.allCases.count) ?? .trackpadRange
+                    }
+                }
+                return .handled
             }
-            localSettings.emitMouseEvent = emitMouseEvent
-            localSettings.requireCommandKey = requireCommandKey
 
-            settings = localSettings
-
-            if mainMenu.process != nil {
-                mainMenu.stopProcess(nil)
-                mainMenu.startProcess(nil)
+            if press.key == .upArrow {
+                focusedField = focusedField.map {
+                    Field(rawValue: ($0.rawValue - 1 + Field.allCases.count) % Field.allCases.count) ?? .trackpadRange
+                }
+                return .handled
             }
-        }) {
-            Text("Apply").padding()
+
+            if press.key == .downArrow {
+                focusedField = focusedField.map {
+                    Field(rawValue: ($0.rawValue + 1) % Field.allCases.count) ?? .trackpadRange
+                }
+                return .handled
+            }
+
+            if press.key == .return || press.key == .space {
+                switch focusedField {
+                case .emitMouseEvent:
+                    emitMouseEvent.toggle()
+                    return .handled
+                case .requireCommandKey:
+                    requireCommandKey.toggle()
+                    return .handled
+                case .apply:
+                    if isValid {
+                        localSettings.trackpadRange = Settings.Range(from: trackpadRange)
+                        localSettings.screenRange = Settings.Range(from: screenRange)
+                    }
+                    localSettings.emitMouseEvent = emitMouseEvent
+                    localSettings.requireCommandKey = requireCommandKey
+
+                    settings = localSettings
+
+                    if mainMenu.process != nil {
+                        mainMenu.stopProcess(nil)
+                        mainMenu.startProcess(nil)
+                    }
+                    return .handled
+                default:
+                    return .ignored
+                }
+            }
+
+            return .ignored
         }
     }
 }
