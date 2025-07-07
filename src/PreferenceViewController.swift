@@ -1,7 +1,7 @@
 import SwiftUI
 import Cocoa
 
-class PreferenceViewController: NSViewController {
+class PreferenceViewController: NSViewController, NSWindowDelegate {
     var mainMenu: MainMenu? = nil
     
     required init(coder: NSCoder) {
@@ -26,5 +26,21 @@ class PreferenceViewController: NSViewController {
             ui.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             ui.centerYAnchor.constraint(equalTo: view.centerYAnchor),
         ])
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        view.window?.delegate = self
+        view.window?.makeFirstResponder(view)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 53 { // 53 is the keycode for Escape
+            view.window?.performClose(nil)
+        }
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        NSApp.hide(nil)
     }
 }

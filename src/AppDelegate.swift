@@ -31,8 +31,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         appSubMenu.addItem(appMenuItemTitle)
         appSubMenu.addItem(NSMenuItem(title: "Quit \(appName)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         appMenuItem.submenu = appSubMenu
-        
+
+        let windowMenu = NSMenu(title: "Window")
+        let closeMenuItem = NSMenuItem(title: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowMenu.addItem(closeMenuItem)
+        let windowMenuItem = NSMenuItem(title: "Window", action: nil, keyEquivalent: "")
+        windowMenuItem.submenu = windowMenu
+
         appMenu.addItem(editMenuItem)
+        appMenu.addItem(windowMenuItem)
 
         // Create the status bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
