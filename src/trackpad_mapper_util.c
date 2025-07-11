@@ -19,9 +19,10 @@ typedef struct {
     Range screenRange;
     bool emitMouseEvent;
     bool requireCommandKey;
+    bool centerCursorOnTouch;
 } Settings;
 
-Settings settings = { false, { 0.05, 0.1, 0.95, 0.9 }, { 0, 0, 1, 1 }, false, false };
+Settings settings = { false, { 0.05, 0.1, 0.95, 0.9 }, { 0, 0, 1, 1 }, false, false, false };
 CGSize screenSize;
 
 int mouseEventNumber = 0;
@@ -122,6 +123,7 @@ int trackpadCallback(
     static int gesturePhase = GESTURE_PHASE_NONE;
     // FIXME: how many fingers can magic trackpad detect?
     static bool gesturePaths[20] = { 0 };
+    static bool newTouch = true;
 
     if (nFingers == 0) {
         // all fingers lifted, clearing gesture fingers
@@ -131,7 +133,13 @@ int trackpadCallback(
         gesturePhase = GESTURE_PHASE_NONE;
         oldFingerCount = nFingers;
         startTrackTimeStamp = 0;
+        newTouch = true;
         return 0;
+    }
+
+    if (newTouch && settings.centerCursorOnTouch) {
+        moveCursor(screenSize.width / 2, screenSize.height / 2);
+        newTouch = false;
     }
 
     if (!startTrackTimeStamp) {
@@ -255,7 +263,7 @@ Range parseRange(char* s) {
 
 void parseSettings(int argc, char** argv) {
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:ec")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:ecn")) != -1) {
         switch (opt) {
             case 'i':
                 settings.trackpadRange = parseRange(optarg);
@@ -273,8 +281,12 @@ void parseSettings(int argc, char** argv) {
                 settings.requireCommandKey = true;
                 settings.useArg = true;
                 break;
+            case 'n':
+                settings.centerCursorOnTouch = true;
+                settings.useArg = true;
+                break;
             default:
-                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e] [-c]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e] [-c] [-n]\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
     }

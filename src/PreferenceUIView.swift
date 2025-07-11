@@ -6,6 +6,7 @@ struct PreferenceUIView: View {
     @State private var screenRange: String = "0,0,1,1"
     @State private var emitMouseEvent: Bool = true
     @State private var requireCommandKey: Bool = false
+    @State private var centerCursorOnTouch: Bool = true
 
     var mainMenu: MainMenu
     @State private var localSettings = settings
@@ -20,7 +21,7 @@ struct PreferenceUIView: View {
     }
 
     private enum Field: Int, CaseIterable {
-        case trackpadRange, screenRange, emitMouseEvent, requireCommandKey, apply
+        case trackpadRange, screenRange, emitMouseEvent, requireCommandKey, centerCursorOnTouch, apply
     }
 
     @FocusState private var focusedField: Field?
@@ -58,6 +59,14 @@ struct PreferenceUIView: View {
                         RoundedRectangle(cornerRadius: 4)
                             .stroke(focusedField == .requireCommandKey ? Color.accentColor : Color.clear, lineWidth: 2)
                     )
+                Toggle("Center cursor on touch", isOn: $centerCursorOnTouch)
+                    .toggleStyle(.checkbox)
+                    .focusable()
+                    .focused($focusedField, equals: .centerCursorOnTouch)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(focusedField == .centerCursorOnTouch ? Color.accentColor : Color.clear, lineWidth: 2)
+                    )
             }
             .focusSection()
 
@@ -70,6 +79,7 @@ struct PreferenceUIView: View {
                     }
                     localSettings.emitMouseEvent = emitMouseEvent
                     localSettings.requireCommandKey = requireCommandKey
+                    localSettings.centerCursorOnTouch = centerCursorOnTouch
 
                     settings = localSettings
 
@@ -92,6 +102,7 @@ struct PreferenceUIView: View {
             screenRange = settings.screenRange?.toString() ?? "0,0,1,1"
             emitMouseEvent = settings.emitMouseEvent
             requireCommandKey = settings.requireCommandKey
+            centerCursorOnTouch = settings.centerCursorOnTouch
             focusedField = .trackpadRange
         }
         .onKeyPress { press in
@@ -130,6 +141,9 @@ struct PreferenceUIView: View {
                 case .requireCommandKey:
                     requireCommandKey.toggle()
                     return .handled
+                case .centerCursorOnTouch:
+                    centerCursorOnTouch.toggle()
+                    return .handled
                 case .apply:
                     if isValid {
                         localSettings.trackpadRange = Settings.Range(from: trackpadRange)
@@ -137,6 +151,7 @@ struct PreferenceUIView: View {
                     }
                     localSettings.emitMouseEvent = emitMouseEvent
                     localSettings.requireCommandKey = requireCommandKey
+                    localSettings.centerCursorOnTouch = centerCursorOnTouch
 
                     settings = localSettings
 
