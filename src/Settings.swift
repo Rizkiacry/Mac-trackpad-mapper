@@ -45,6 +45,7 @@ struct Settings: Codable {
     var emitMouseEvent: Bool = true
     var requireCommandKey: Bool = false
     var centerCursorOnTouch: Bool = true
+    var dragFromCenter: Bool = false
 
     func toArgs() -> [String] {
         var args: [String] = []
@@ -65,6 +66,9 @@ struct Settings: Codable {
         }
         if centerCursorOnTouch {
             args.append("-n")
+        }
+        if dragFromCenter {
+            args.append("-d")
         }
 
         return args
