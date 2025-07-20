@@ -40,11 +40,11 @@ struct Settings: Codable {
     }
 
     var useHeader: Bool = false
-    var trackpadRange: Range? = Range(from: "0.275,0.3,0.725,0.7")
+    var trackpadRange: Range? = Range(from: "0.250,0.250,0.750,0.750")
     var screenRange: Range? = nil
     var emitMouseEvent: Bool = true
     var requireCommandKey: Bool = false
-    var centerCursorOnTouch: Bool = true
+    var centerCursorOnTouch: Bool = false
     var dragFromCenter: Bool = false
 
     func toArgs() -> [String] {
