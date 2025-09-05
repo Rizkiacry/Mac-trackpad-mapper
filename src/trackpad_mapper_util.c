@@ -19,11 +19,10 @@ typedef struct {
     Range screenRange;
     bool emitMouseEvent;
     bool requireCommandKey;
-    bool centerCursorOnTouch;
-    bool dragFromCenter;
+    bool centerCursorOnRelease;
 } Settings;
 
-Settings settings = { false, { 0.05, 0.1, 0.95, 0.9 }, { 0, 0, 1, 1 }, false, false, false, false };
+Settings settings = { false, { 0.05, 0.1, 0.95, 0.9 }, { 0, 0, 1, 1 }, false, false, false };
 CGSize screenSize;
 
 int mouseEventNumber = 0;
@@ -127,6 +126,9 @@ int trackpadCallback(
     static bool newTouch = true;
 
     if (nFingers == 0) {
+        if (settings.centerCursorOnRelease) {
+            moveCursor(screenSize.width / 2, screenSize.height / 2);
+        }
         // all fingers lifted, clearing gesture fingers
         for (int i = 0; i < 20; i++) {
             gesturePaths[i] = false;
@@ -136,20 +138,6 @@ int trackpadCallback(
         startTrackTimeStamp = 0;
         newTouch = true;
         return 0;
-    }
-
-    if (newTouch && settings.centerCursorOnTouch) {
-        if (settings.dragFromCenter) {
-            CGEventRef event = CGEventCreateMouseEvent(
-                NULL,
-                kCGEventLeftMouseDown,
-                CGPointMake(screenSize.width / 2, screenSize.height / 2),
-                kCGMouseButtonLeft);
-            CGEventPost(kCGHIDEventTap, event);
-            CFRelease(event);
-        }
-        moveCursor(screenSize.width / 2, screenSize.height / 2);
-        newTouch = false;
     }
 
     if (!startTrackTimeStamp) {
@@ -273,7 +261,7 @@ Range parseRange(char* s) {
 
 void parseSettings(int argc, char** argv) {
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:ecnd")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:ecr")) != -1) {
         switch (opt) {
             case 'i':
                 settings.trackpadRange = parseRange(optarg);
@@ -291,16 +279,12 @@ void parseSettings(int argc, char** argv) {
                 settings.requireCommandKey = true;
                 settings.useArg = true;
                 break;
-            case 'n':
-                settings.centerCursorOnTouch = true;
-                settings.useArg = true;
-                break;
-            case 'd':
-                settings.dragFromCenter = true;
+            case 'r':
+                settings.centerCursorOnRelease = true;
                 settings.useArg = true;
                 break;
             default:
-                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e] [-c] [-n] [-d]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e] [-c] [-r]\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
