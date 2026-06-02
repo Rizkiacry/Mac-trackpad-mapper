@@ -166,6 +166,11 @@ int trackpadCallback(
         }
     }
 
+    // No fingers in active region — ignore all outside touches
+    if (activeFingers == 0) {
+        return 0;
+    }
+
     if (!startTrackTimeStamp) {
         startTrackTimeStamp = timestamp;
     }
@@ -180,7 +185,7 @@ int trackpadCallback(
         return 0;
     }
 
-    if (activeFingers != 1 && (
+    if (activeFingers > 1 && (
         timestamp - startTrackTimeStamp < GESTURE_TIMEOUT ||
         gesturePhase != GESTURE_PHASE_NONE))
     {
@@ -214,6 +219,24 @@ int trackpadCallback(
         if (data[i].pathIndex == oldPathIndex) {
             f = &data[i];
             break;
+        }
+    }
+    // If tracked finger is outside region but active fingers exist inside, switch
+    if (activeFingers > 0) {
+        float fx = f->normalizedVector.position.x;
+        float fy = 1 - f->normalizedVector.position.y;
+        if (fx < settings.trackpadRange.lowx || fx > settings.trackpadRange.upx ||
+            fy < settings.trackpadRange.lowy || fy > settings.trackpadRange.upy) {
+            for (int i = 0; i < nFingers; i++) {
+                float nx = data[i].normalizedVector.position.x;
+                float ny = 1 - data[i].normalizedVector.position.y;
+                if (nx >= settings.trackpadRange.lowx && nx <= settings.trackpadRange.upx &&
+                    ny >= settings.trackpadRange.lowy && ny <= settings.trackpadRange.upy) {
+                    f = &data[i];
+                    oldPathIndex = f->pathIndex;
+                    break;
+                }
+            }
         }
     }
 
