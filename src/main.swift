@@ -1,7 +1,7 @@
-import ApplicationServices
 import Cocoa
 import Foundation
 import SwiftUI
+import ApplicationServices
 
 func alert(msg: String = "") {
     let alert = NSAlert.init()
@@ -17,27 +17,23 @@ func main() {
     NSApp.setActivationPolicy(.accessory)
     NSApp.activate(ignoringOtherApps: true)
 
-    // Check accessibility
     let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
     let options = [checkOptPrompt: true] as CFDictionary?
 
-    if !AXIsProcessTrustedWithOptions(options) {
+    if (!AXIsProcessTrustedWithOptions(options)) {
         return
     }
 
-    // create status bar item
     let statusItem = NSStatusBar.system.statusItem(
-        withLength: NSStatusItem.variableLength)
+                        withLength: NSStatusItem.variableLength)
     statusItem.button?.image = Bundle.main.image(forResource: "trackpad_status_icon")!
     statusItem.button?.image!.isTemplate = true
 
-    // building menu
     let menu = MainMenu()
-
-    // Hook menu to status bar item
     statusItem.menu = menu
 
-    // Atart app
+    menu.startProcess(nil)
+
     NSApp.run()
 }
 

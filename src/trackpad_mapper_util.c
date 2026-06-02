@@ -2,6 +2,7 @@
 #include <Carbon/Carbon.h>
 #include <CoreGraphics/CoreGraphics.h>
 #include "MultitouchSupport.h"
+#include "../settings.h"
 
 #define try(...) \
     if ((__VA_ARGS__) == -1) { \
@@ -21,7 +22,7 @@ typedef struct {
     bool requireCommandKey;
 } Settings;
 
-Settings settings = { false, { 0.05, 0.1, 0.95, 0.9 }, { 0, 0, 1, 1 }, false, false };
+Settings settings = { false, { 0.25, 0.25, 0.75, 0.75 }, { 0, 0, 1, 1, }, true, false };
 CGSize screenSize;
 
 int mouseEventNumber = 0;
@@ -70,12 +71,41 @@ void moveCursor(double x, double y) {
         return;
     }
 
-    CGPoint point = {
-        .x = x < 0 ? 0 : x >= screenSize.width ? screenSize.width - 1 : x,
-        .y = y < 0 ? 0 : y >= screenSize.height ? screenSize.height - 1: y,
+    static double lastX = -1.0;
+    static double lastY = -1.0;
+
+    const double threshold = JITTER_THRESHOLD;
+    double alpha = JITTER_ALPHA;
+
+    if (alpha <= 0.0) {
+        alpha = 0.1;
+    } else if (alpha > 1.0) {
+        alpha = 1.0;
+    }
+
+    if (lastX >= 0.0 && lastY >= 0.0) {
+        double dx = x - lastX;
+        double dy = y - lastY;
+        double dist2 = dx * dx + dy * dy;
+
+        if (dist2 < threshold * threshold) {
+            return;
+        }
+
+        x = lastX + alpha * dx;
+        y = lastY + alpha * dy;
+    }
+
+    lastX = x;
+    lastY = y;
+
+    CGPoint point = (CGPoint){
+        .x = x < 0 ? 0 : x >= screenSize.width  ? screenSize.width  - 1 : x,
+        .y = y < 0 ? 0 : y >= screenSize.height ? screenSize.height - 1 : y,
     };
 
-    if (settings.emitMouseEvent)
+    if (settings.useArg && settings.emitMouseEvent ||
+        !settings.useArg && emitMouseEvent)
     {
         CGEventRef event = CGEventCreateMouseEvent(
             NULL,
@@ -95,12 +125,6 @@ void moveCursor(double x, double y) {
     }
 }
 
-// moving cursor here increases sensitivity to finger
-// detecting gesture:
-// Beginning of a gesture may start with one finger or more than one fingers.
-// Simply checking how many fingers touched is not enough.
-// Discard coordinates of the first callback call for each cursor movement
-// and wait for the second call to make sure it is not a gesture.
 int trackpadCallback(
     MTDeviceRef device,
     MTTouch *data,
@@ -120,11 +144,9 @@ int trackpadCallback(
                   startTrackTimeStamp = 0;
     static size_t oldFingerCount = 1;
     static int gesturePhase = GESTURE_PHASE_NONE;
-    // FIXME: how many fingers can magic trackpad detect?
     static bool gesturePaths[20] = { 0 };
 
     if (nFingers == 0) {
-        // all fingers lifted, clearing gesture fingers
         for (int i = 0; i < 20; i++) {
             gesturePaths[i] = false;
         }
@@ -156,17 +178,19 @@ int trackpadCallback(
         for (int i = 0; i < nFingers; i++) {
             gesturePaths[data[i].pathIndex] = true;
         }
-        moveCursor(fingerPosition.x, fingerPosition.y);
+        if (!(DISABLE_CURSOR_ON_MULTITOUCH && nFingers > 1)) {
+            moveCursor(fingerPosition.x, fingerPosition.y);
+        }
         oldFingerCount = nFingers;
         return 0;
     };
 
-    // keeping one finger on trackpad when lifting up fingers
-    // at the end of gesture
     if (gesturePhase == GESTURE_PHASE_BEGAN) {
         for (int i = 0; i < nFingers; i++) {
             if (gesturePaths[data[i].pathIndex]) {
-                moveCursor(fingerPosition.x, fingerPosition.y);
+                if (!(DISABLE_CURSOR_ON_MULTITOUCH && nFingers > 1)) {
+                    moveCursor(fingerPosition.x, fingerPosition.y);
+                }
                 return 0;
             }
         }
@@ -174,7 +198,6 @@ int trackpadCallback(
 
     gesturePhase = GESTURE_PHASE_NONE;
 
-    // remembers currently using which finger
     MTTouch *f = &data[0];
     for (int i = 0; i < nFingers; i++){
         if (data[i].pathIndex == oldPathIndex) {
@@ -184,12 +207,11 @@ int trackpadCallback(
     }
 
     oldFingerPosition = fingerPosition;
-    fingerPosition = _map(
+    fingerPosition = (settings.useArg ? _map : map)(
             f->normalizedVector.position.x, 1 - f->normalizedVector.position.y);
     MTPoint velocity = f->normalizedVector.velocity;
 
     if (fingerPosition.x < 0 || fingerPosition.y < 0) {
-        // Only lock cursor when finger starts path on dead zone
         if (f->pathIndex == oldPathIndex) {
             if (fingerPosition.x < 0) {
                 fingerPosition.x = oldFingerPosition.x +
@@ -207,7 +229,9 @@ int trackpadCallback(
         oldPathIndex = f->pathIndex;
     }
 
-    moveCursor(fingerPosition.x, fingerPosition.y);
+    if (!(DISABLE_CURSOR_ON_MULTITOUCH && nFingers > 1)) {
+        moveCursor(fingerPosition.x, fingerPosition.y);
+    }
 
     oldTimeStamp = timestamp;
     return 0;
@@ -298,17 +322,11 @@ CGEventRef loggerCallback(
 }
 
 int main(int argc, char** argv) {
-    // if (!check_privileges()) {
-    //     printf("Requires accessbility privileges\n");
-    //     return 1;
-    // }
     parseSettings(argc, argv);
     screenSize = CGDisplayBounds(CGMainDisplayID()).size;
 
     try(pthread_mutex_init(&mouseEventNumber_mutex, NULL));
 
-    // start trackpad service
-    // https://github.com/JitouchApp/Jitouch-project/blob/3b5018e4bc839426a6ce0917cea6df753d19da10/Application/Gesture.m#L2926-L2954
     CFArrayRef deviceList = MTDeviceCreateList();
     for (CFIndex i = 0; i < CFArrayGetCount(deviceList); i++) {
         MTDeviceRef device = (MTDeviceRef)CFArrayGetValueAtIndex(deviceList, i);
@@ -316,14 +334,13 @@ int main(int argc, char** argv) {
         MTDeviceGetFamilyID(device, &familyId);
         if (
             familyId >= 98
-            && familyId != 112 && familyId != 113  // Magic Mouse 1&2 / 3
+            && familyId != 112 && familyId != 113
         ) {
             MTRegisterContactFrameCallback(device, (MTFrameCallbackFunction)trackpadCallback);
             MTDeviceStart(device, 0);
         }
     }
 
-    // simply an infinite loop waiting for app to quit
     CFRunLoopRun();
     return 0;
 }

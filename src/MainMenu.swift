@@ -24,38 +24,33 @@ class MainMenu: NSMenu {
     public init() {
         super.init(title: "")
 
-        // Version
         versionItem = NSMenuItem(
             title: "Version 0.0.1",
             action: nil,
             keyEquivalent: "")
 
-        // Start process
         startItem = NSMenuItem(
-            title: "Start absolute tracking",
-            action: #selector(MainMenu.startProcess(_:)),
-            keyEquivalent: "s")
+                            title: "Start absolute tracking",
+                            action: #selector(MainMenu.startProcess(_:)),
+                            keyEquivalent: "s")
         startItem!.target = self
 
-        // Stop process
         stopItem = NSMenuItem(
-            title: "Stop absolute tracking",
-            action: #selector(MainMenu.stopProcess(_:)),
-            keyEquivalent: "s")
+                            title: "Stop absolute tracking",
+                            action: #selector(MainMenu.stopProcess(_:)),
+                            keyEquivalent: "s")
         stopItem!.target = self
 
-        // Preference
         preferenceItem = NSMenuItem(
-            title: "Preference",
-            action: #selector(MainMenu.openPreference(_:)),
-            keyEquivalent: ",")
+                            title: "Preference",
+                            action: #selector(MainMenu.openPreference(_:)),
+                            keyEquivalent: ",")
         preferenceItem!.target = self
 
-        // Quit app
         quitItem = NSMenuItem(
-            title: "Quit trackpad mapper",
-            action: #selector(MainMenu.terminate(_:)),
-            keyEquivalent: "q")
+                            title: "Quit trackpad mapper",
+                            action: #selector(MainMenu.terminate(_:)),
+                            keyEquivalent: "q")
         quitItem!.target = self
 
         addItem(versionItem!)
