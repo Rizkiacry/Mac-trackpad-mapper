@@ -34,5 +34,7 @@ static const double JITTER_THRESHOLD = 4.0;  // in screen pixels (try 4–10)
 // If set to 0, it will be clamped to 0.1 in trackpad_mapper_util.c to avoid the cursor getting stuck.
 static const double JITTER_ALPHA = 0.6;
 
-// Disable custom cursor movement whenever more than one finger is on the pad
+// Disable cursor when more than one finger is within the active mapping region
+// Fingers/palm touches outside the region are ignored
+// Prevents palm or accidental touches from interrupting active finger
 static const bool DISABLE_CURSOR_ON_MULTITOUCH = true;
