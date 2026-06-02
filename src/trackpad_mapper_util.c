@@ -207,6 +207,7 @@ int trackpadCallback(
     }
 
     gesturePhase = GESTURE_PHASE_NONE;
+    oldFingerCount = activeFingers;
 
     MTTouch *f = &data[0];
     for (int i = 0; i < nFingers; i++){
