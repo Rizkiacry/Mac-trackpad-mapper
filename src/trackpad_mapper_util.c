@@ -20,9 +20,10 @@ typedef struct {
     Range screenRange;
     bool emitMouseEvent;
     bool requireCommandKey;
+    bool disableGesture;
 } Settings;
 
-Settings settings = { false, { 0.25, 0.25, 0.75, 0.75 }, { 0, 0, 1, 1, }, true, false };
+Settings settings = { false, { 0.25, 0.25, 0.75, 0.75 }, { 0, 0, 1, 1, }, true, false, false };
 CGSize screenSize;
 
 int mouseEventNumber = 0;
@@ -175,41 +176,45 @@ int trackpadCallback(
         startTrackTimeStamp = timestamp;
     }
 
-    if (oldFingerCount != 1 && activeFingers == 1 && !gesturePhase) {
-        gesturePhase = GESTURE_PHASE_MAYSTART;
-        oldFingerCount = activeFingers;
-        return 0;
-    };
+    bool gestureDisabled = settings.useArg ? settings.disableGesture : disableGesture;
 
-    if (activeFingers == 1 && timestamp - startTrackTimeStamp < GESTURE_TIMEOUT) {
-        return 0;
-    }
+    if (!gestureDisabled) {
+        if (oldFingerCount != 1 && activeFingers == 1 && !gesturePhase) {
+            gesturePhase = GESTURE_PHASE_MAYSTART;
+            oldFingerCount = activeFingers;
+            return 0;
+        };
 
-    if (activeFingers > 1 && (
-        timestamp - startTrackTimeStamp < GESTURE_TIMEOUT ||
-        gesturePhase != GESTURE_PHASE_NONE))
-    {
-        gesturePhase = GESTURE_PHASE_BEGAN;
-        for (int i = 0; i < nFingers; i++) {
-            gesturePaths[data[i].pathIndex] = true;
+        if (activeFingers == 1 && timestamp - startTrackTimeStamp < GESTURE_TIMEOUT) {
+            return 0;
         }
-        if (!(DISABLE_CURSOR_ON_MULTITOUCH && activeFingers > 1)) {
-            moveCursor(fingerPosition.x, fingerPosition.y);
-        }
-        oldFingerCount = activeFingers;
-        return 0;
-    };
 
-    if (gesturePhase == GESTURE_PHASE_BEGAN) {
-        for (int i = 0; i < nFingers; i++) {
-            if (gesturePaths[data[i].pathIndex]) {
-                if (!(DISABLE_CURSOR_ON_MULTITOUCH && activeFingers > 1)) {
-                    moveCursor(fingerPosition.x, fingerPosition.y);
+        if (activeFingers > 1 && (
+            timestamp - startTrackTimeStamp < GESTURE_TIMEOUT ||
+            gesturePhase != GESTURE_PHASE_NONE))
+        {
+            gesturePhase = GESTURE_PHASE_BEGAN;
+            for (int i = 0; i < nFingers; i++) {
+                gesturePaths[data[i].pathIndex] = true;
+            }
+            if (!(DISABLE_CURSOR_ON_MULTITOUCH && activeFingers > 1)) {
+                moveCursor(fingerPosition.x, fingerPosition.y);
+            }
+            oldFingerCount = activeFingers;
+            return 0;
+        };
+
+        if (gesturePhase == GESTURE_PHASE_BEGAN) {
+            for (int i = 0; i < nFingers; i++) {
+                if (gesturePaths[data[i].pathIndex]) {
+                    if (!(DISABLE_CURSOR_ON_MULTITOUCH && activeFingers > 1)) {
+                        moveCursor(fingerPosition.x, fingerPosition.y);
+                    }
+                    if (activeFingers > 1) {
+                        return 0;
+                    }
+                    break;
                 }
-                if (activeFingers > 1) {
-                    return 0;
-                }
-                break;
             }
         }
     }
@@ -316,7 +321,7 @@ Range parseRange(char* s) {
 
 void parseSettings(int argc, char** argv) {
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:ec")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:ecg")) != -1) {
         switch (opt) {
             case 'i':
                 settings.trackpadRange = parseRange(optarg);
@@ -334,8 +339,12 @@ void parseSettings(int argc, char** argv) {
                 settings.requireCommandKey = true;
                 settings.useArg = true;
                 break;
+            case 'g':
+                settings.disableGesture = true;
+                settings.useArg = true;
+                break;
             default:
-                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e] [-c]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-i lowx,lowy,upx,upy] [-o lowx,lowy,upx,upy] [-e] [-c] [-g]\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
     }

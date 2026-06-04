@@ -4,6 +4,7 @@
 extern CGSize screenSize;
 // Emit mouse event or wrap cursor. Default is warp cursor
 bool emitMouseEvent = true;
+bool disableGesture = false;
 
 // Helper function: lower and upper has to be without 0 to 1 inclusive
 static inline double rangeRatio(double n, double lower, double upper) {
