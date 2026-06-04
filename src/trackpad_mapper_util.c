@@ -266,7 +266,7 @@ int trackpadCallback(
         oldPathIndex = f->pathIndex;
     }
 
-    if (!(DISABLE_CURSOR_ON_MULTITOUCH && activeFingers > 1)) {
+    if (!(gesturePhase == GESTURE_PHASE_BEGAN && DISABLE_CURSOR_ON_MULTITOUCH)) {
         moveCursor(fingerPosition.x, fingerPosition.y);
     }
 
