@@ -206,7 +206,10 @@ int trackpadCallback(
                 if (!(DISABLE_CURSOR_ON_MULTITOUCH && activeFingers > 1)) {
                     moveCursor(fingerPosition.x, fingerPosition.y);
                 }
-                return 0;
+                if (activeFingers > 1) {
+                    return 0;
+                }
+                break;
             }
         }
     }
