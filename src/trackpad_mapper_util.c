@@ -30,6 +30,8 @@ int mouseEventNumber = 0;
 pthread_mutex_t mouseEventNumber_mutex;
 #define MAGIC_NUMBER 12345
 
+CFMachPortRef eventTap = NULL;
+
 bool isCmdKeyPressed() {
     CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
     return (flags & kCGEventFlagMaskCommand) != 0;
@@ -356,10 +358,24 @@ CGEventRef loggerCallback(
     CGEventRef event,
     void* context)
 {
+    if (type == kCGEventTapDisabledByTimeout) {
+        if (eventTap) CGEventTapEnable(eventTap, true);
+        return NULL;
+    }
+
     int magic_number = CGEventGetIntegerValueField(event, kCGEventSourceUserData);
     if (magic_number == MAGIC_NUMBER) {
         return event;
     }
+
+    // Consume gesture events when gesture detection is disabled
+    bool _gd = settings.useArg ? settings.disableGesture : disableGesture;
+    if (_gd) {
+        if (type == 22 || type == 29 || type == 30 || type == 31) {
+            return NULL;
+        }
+    }
+
     int eventNumber = CGEventGetIntegerValueField(event, kCGMouseEventNumber);
     try(pthread_mutex_lock(&mouseEventNumber_mutex));
     mouseEventNumber = eventNumber;
@@ -385,6 +401,22 @@ int main(int argc, char** argv) {
             MTRegisterContactFrameCallback(device, (MTFrameCallbackFunction)trackpadCallback);
             MTDeviceStart(device, 0);
         }
+    }
+
+    eventTap = CGEventTapCreate(
+        kCGHIDEventTap,
+        kCGHeadInsertEventTap,
+        kCGEventTapOptionDefault,
+        kCGEventMaskForAllEvents,
+        loggerCallback,
+        NULL);
+    if (eventTap) {
+        CFRunLoopSourceRef runLoopSource = CFMachPortCreateRunLoopSource(
+            kCFAllocatorDefault, eventTap, 0);
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, kCFRunLoopCommonModes);
+        CFRelease(runLoopSource);
+    } else {
+        fprintf(stderr, "Warning: Event tap failed — grant accessibility permissions\n");
     }
 
     CFRunLoopRun();
