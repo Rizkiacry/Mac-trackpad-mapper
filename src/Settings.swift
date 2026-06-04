@@ -45,6 +45,7 @@ struct Settings: Codable {
     var screenRange: Range? = nil
     var emitMouseEvent: Bool = true
     var requireCommandKey: Bool = false
+    var disableGesture: Bool = false
 
     init(trackpad: Range? = nil, screen: Range? = nil) {
         if let trackpad = trackpad { trackpadRange = trackpad }
@@ -67,6 +68,9 @@ struct Settings: Codable {
             }
             if requireCommandKey {
                 args.append("-c")
+            }
+            if disableGesture {
+                args.append("-g")
             }
         }
         return args

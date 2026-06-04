@@ -6,6 +6,7 @@ struct PreferenceUIView: View {
     @State private var screenRange: String = settings.screenRange?.toString() ?? "0,0,1,1"
     @State private var emitMouseEvent: Bool = settings.emitMouseEvent
     @State private var requireCommandKey: Bool = settings.requireCommandKey
+    @State private var disableGesture: Bool = settings.disableGesture
 
     @State private var localSettings = settings
     @FocusState private var focusedField: Field?
@@ -39,6 +40,8 @@ struct PreferenceUIView: View {
                     .toggleStyle(.checkbox)
                 Toggle("Activate only while ⌘ pressed", isOn: $requireCommandKey)
                     .toggleStyle(.checkbox)
+                Toggle("Disable gesture detection", isOn: $disableGesture)
+                    .toggleStyle(.checkbox)
             }
         }
         .padding()
@@ -55,6 +58,7 @@ struct PreferenceUIView: View {
         }
         localSettings.emitMouseEvent = emitMouseEvent
         localSettings.requireCommandKey = requireCommandKey
+        localSettings.disableGesture = disableGesture
         localSettings.useHeader = useHeader
         settings = localSettings
 
